@@ -10,6 +10,10 @@ Lets you covert YouTube-playlists to RSS podcast feeds and serve them.
 * Convert to mp3, mp4 or any other audio/video format
 * Serve the downloaded audio files (needs to be done by an other server)
 
+## Dependencies
+* [youtube-dl](https://github.com/rg3/youtube-dl)
+* [python-feedgen](https://github.com/lkiesow/python-feedgen)
+
 ## To do
 * Add comments/documentation
 * Support multiple audio/video formats
