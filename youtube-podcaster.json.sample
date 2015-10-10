@@ -1,0 +1,10 @@
+{
+    "youtube": {
+        "api-key": "youtube-api-v3-key-here"
+    },
+
+    "podcasts": [{
+        "username": "youtube-username-here",
+        "playlists": ["playlist-name-here"]
+    }]
+}

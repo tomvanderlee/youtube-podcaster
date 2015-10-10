@@ -1,0 +1,8 @@
+downloads/
+
+feeds.save
+youtube-podcaster.json
+
+*.pyc
+*.xml
+*.sw?
