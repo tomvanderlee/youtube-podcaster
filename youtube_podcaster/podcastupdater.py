@@ -1,29 +1,19 @@
-#!/usr/bin/env python3
-import time
-import os
 import pickle
-import json
-
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from hashlib import sha1
+import os
+import time
+import hashlib
 
 from feedgen.feed import FeedGenerator
 
-import youtube
+from . import (
+    youtube,
+)
 
 
 class PodcastUpdater:
-    instance = None
-
-    def get_instance():
-        if PodcastUpdater.instance:
-            return PodcastUpdater.instance
-        else:
-            PodcastUpdater.instance = PodcastUpdater()
-            return PodcastUpdater.instance
-
-    def __init__(self):
-        self.podcasts = config["podcasts"]
+    def __init__(self, youtube_config, podcast_config):
+        self.podcasts = podcast_config
+        self.youtube = youtube.Youtube(youtube_config["api-key"])
 
         self.feeds_file = "feeds.save"
         if os.path.isfile(self.feeds_file):
@@ -51,9 +41,9 @@ class PodcastUpdater:
             return open(xml).read()
 
     def update_podcast(self, channel, playlist):
-        feed_id = sha1(bytes("%s %s" % (channel, playlist), "UTF-8")).hexdigest()
-        yt_channel = yt.get_channel(channel)[0]
-        yt_playlists = yt.get_playlists(yt_channel, 50)
+        feed_id = hashlib.sha1(bytes("%s %s" % (channel, playlist), "UTF-8")).hexdigest()
+        yt_channel = self.youtube.get_channel(channel)[0]
+        yt_playlists = self.youtube.get_playlists(yt_channel, 50)
 
         for yt_playlist in yt_playlists:
             if yt_playlist["snippet"]["title"] == playlist:
@@ -92,12 +82,12 @@ class PodcastUpdater:
         return feed
 
     def populate_feed(self, feed, feed_id, yt_playlist, max_results=5):
-        videos = yt.get_playlist_items(yt_playlist, max_results)
+        videos = self.youtube.get_playlist_items(yt_playlist, max_results)
         downloader = youtube.Downloader.get_instance("vorbis", "downloads", "192.168.178.100")
 
         entries = feed.entry()
         for video in videos:
-            video_id = sha1(bytes(video["id"], "UTF-8")).hexdigest()
+            video_id = hashlib.sha1(bytes(video["id"], "UTF-8")).hexdigest()
             for entry in entries:
                 if entry.id() == video_id:
                     break
@@ -112,48 +102,5 @@ class PodcastUpdater:
                 feed_entry.enclosure(url, size, mime)
 
         feed.last_updated = time.time()
-
-
-class PodcastFeeder(BaseHTTPRequestHandler):
-    def do_GET(self):
-        updater = PodcastUpdater.get_instance()
-        path = self.path.split('/')
-
-        if len(path) == 3:
-            channel = path[1]
-            playlist = path[2]
-        else:
-            return self.return_error(404)
-
-        xml = updater.get_xml(channel, playlist)
-
-        if not xml:
-            return self.return_error(404)
-        else:
-            self.send_response(200)
-            self.send_header("Content-type", "text/xml")
-            self.end_headers()
-            self.wfile.write(bytes(xml, 'UTF-8'))
-
-    def return_error(self, code):
-        self.send_response(code)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-        reponse = "<body>Error: %s</body>" % (code)
-        self.wfile.write(bytes(reponse, 'UTF-8'))
-
-
-def main():
-    try:
-        server = HTTPServer(("", 8888), PodcastFeeder)
-        server.serve_forever()
-    except KeyboardInterrupt:
-        server.socket.close()
-
-if __name__ == "__main__":
-    config = json.load(open("youtube-podcaster.json"))
-    yt = youtube.Youtube(config["youtube"]["api-key"])
-    main()
 
 #  vim: set ts=8 sw=4 tw=0 et :

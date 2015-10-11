@@ -39,3 +39,9 @@ docs/api/*
 docs/_build/*
 cover/*
 MANIFEST
+
+# Outputted files by youtube-podcaster
+*.xml
+*.save
+downloads/
+youtube-podcaster.json
