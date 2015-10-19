@@ -2,6 +2,7 @@ import pickle
 import os
 import time
 import hashlib
+import sys
 
 from feedgen.feed import FeedGenerator
 
@@ -11,11 +12,19 @@ from . import (
 
 
 class PodcastUpdater:
-    def __init__(self, youtube_config, podcast_config):
-        self.podcasts = podcast_config
-        self.youtube = youtube.Youtube(youtube_config["api-key"])
+    def __init__(self, config):
+        self.podcasts = config.podcasts
+        self.youtube = youtube.Youtube(config.youtube["api-key"])
 
-        self.feeds_file = "feeds.save"
+        if sys.platform == "linux" and not hasattr(sys, "real_prefix"):
+            self.data_dir = "/var/lib/youtube-podcaster"
+        else:
+            self.data_dir = "%s/var/lib/youtube-podcaster" % (sys.prefix)
+
+        os.makedirs(self.data_dir, 0o755, True)
+
+        self.feeds_file = "%s/feeds.dump" % (self.data_dir)
+
         if os.path.isfile(self.feeds_file):
             with open(self.feeds_file, "rb") as feeds:
                 self.feeds = pickle.load(feeds)
@@ -42,6 +51,8 @@ class PodcastUpdater:
 
     def update_podcast(self, channel, playlist):
         feed_id = hashlib.sha1(bytes("%s %s" % (channel, playlist), "UTF-8")).hexdigest()
+        feed_file = "%s/%s.xml" % (self.data_dir, feed_id)
+
         yt_channel = self.youtube.get_channel(channel)[0]
         yt_playlists = self.youtube.get_playlists(yt_channel, 50)
 
@@ -58,17 +69,16 @@ class PodcastUpdater:
 
         if feed.last_updated < time.time() - 600:
             self.populate_feed(feed, feed_id, yt_playlist)
+            feed.rss_file(feed_file)
 
-            feed_file = "%s.xml" % (feed_id)
-            self.feeds[feed_id].rss_file(feed_file)
+            with open(self.feeds_file, "wb") as feeds:
+                pickle.dump(self.feeds, feeds)
 
-            with open(self.feeds_file, "wb") as feed:
-                pickle.dump(self.feeds, feed)
-
-        return "%s.xml" % (feed_id)
+        return feed_file
 
     def add_feed(self, feed_id, yt_playlist):
         feed = FeedGenerator()
+
         feed.load_extension("podcast")
         feed.id(feed_id)
         feed.title(yt_playlist["snippet"]["title"])
@@ -78,7 +88,9 @@ class PodcastUpdater:
         feed.link(href="https://www.youtube.com/playlist?list=%s" % (yt_playlist["id"]))
         feed.rss_str(pretty=True)
         feed.last_updated = 0
+
         self.feeds[feed_id] = feed
+
         return feed
 
     def populate_feed(self, feed, feed_id, yt_playlist, max_results=5):
@@ -93,7 +105,9 @@ class PodcastUpdater:
                     break
             else:
                 url, size, mime = downloader.download(video, video_id, feed_id)
+
                 feed_entry = feed.add_entry()
+
                 feed_entry.id(video_id)
                 feed_entry.guid(video_id)
                 feed_entry.title(video["snippet"]["title"])

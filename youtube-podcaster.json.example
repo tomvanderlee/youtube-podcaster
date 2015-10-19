@@ -1,0 +1,21 @@
+{
+    "server" : {
+        "interface": "0.0.0.0",
+	"port": 8888
+    },
+
+    "youtube": {
+        "api-key": ""
+    },
+
+    "podcasts": [{
+        "username": "",
+        "playlists": [""]
+    }],
+
+    "downloads": {
+        "format": "vorbis",
+        "path": "/tmp/downloads/",
+        "url": "localhost"
+    }
+}

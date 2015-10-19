@@ -5,10 +5,10 @@ from .podcastupdater import (
 )
 
 
-def create_feeder(youtube_config, podcast_config):
+def create_feeder(config):
     class PodcastFeeder(BaseHTTPRequestHandler):
         def __init__(self, request, client_address, server):
-            self.updater = PodcastUpdater(youtube_config, podcast_config)
+            self.updater = PodcastUpdater(config)
             super(PodcastFeeder, self).__init__(request, client_address, server)
 
         def do_GET(self):
