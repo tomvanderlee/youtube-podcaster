@@ -20,19 +20,10 @@ class Downloader:
         self.location = location
         self.base_url = base_url
 
-        self.downloaded = []
-
         if file_format == "vorbis":
             self.extension = "ogg"
         elif file_format == "opus":
             self.extension = "opus"
-
-        if sys.platform == "linux" and not hasattr(sys, "real_prefix"):
-            self.tmp_dir = "/tmp/youtube-podcaster"
-        else:
-            self.tmp_dir= "%s/tmp/youtube-podcaster" % (sys.prefix)
-
-        os.makedirs(self.tmp_dir, 0o755, True)
 
     def download(self, video, video_id, feed_id):
 
@@ -43,7 +34,8 @@ class Downloader:
 
         # Tmp output
         tmp_filename = "%s.webm" % (video_id)
-        tmp_output = "%s/%s" % (self.tmp_dir, tmp_filename)
+        tmp_dir = "%s/tmp" % output_dir
+        tmp_output = "%s/%s" % (tmp_dir, tmp_filename)
 
         options = {"format": "bestaudio/best",
                    "outtmpl": tmp_output,
@@ -55,16 +47,14 @@ class Downloader:
         video_url = "https://www.youtube.com/watch?v=%s" % (video["snippet"]["resourceId"]["videoId"])
         youtube_dl.YoutubeDL(options).download([video_url])
 
-        tmp_output = "%s/%s" % (self.tmp_dir, filename)
+        tmp_output = "%s/%s" % (tmp_dir, filename)
 
-        url = "%s/%s/%s.%s" % (self.base_url, feed_id, video_id, self.extension)
+        url = "%s/%s/%s" % (self.base_url, feed_id, filename)
         size = str(os.path.getsize(tmp_output))
         mime = mimetypes.guess_type(tmp_output)[0]
 
         os.makedirs(output_dir, 0o755, True)
         os.rename(tmp_output, output)
-
-        self.downloaded.append(output)
 
         return (url, size, mime)
 

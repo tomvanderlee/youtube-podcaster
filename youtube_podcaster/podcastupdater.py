@@ -71,7 +71,7 @@ class PodcastUpdater:
             feed = self.add_feed(feed_id, yt_playlist)
 
         if feed.last_updated < time.time() - 600:
-            self.populate_feed(feed, feed_id, yt_playlist)
+            self.populate_feed(feed, feed_id, yt_playlist, max_results=1)
             feed.rss_file(feed_file)
 
             with open(self.feeds_file, "wb") as feeds:
