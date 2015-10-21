@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import mimetypes
 
 import youtube_dl
@@ -19,26 +20,51 @@ class Downloader:
         self.location = location
         self.base_url = base_url
 
+        self.downloaded = []
+
         if file_format == "vorbis":
             self.extension = "ogg"
+        elif file_format == "opus":
+            self.extension = "opus"
+
+        if sys.platform == "linux" and not hasattr(sys, "real_prefix"):
+            self.tmp_dir = "/tmp/youtube-podcaster"
+        else:
+            self.tmp_dir= "%s/tmp/youtube-podcaster" % (sys.prefix)
+
+        os.makedirs(self.tmp_dir, 0o755, True)
 
     def download(self, video, video_id, feed_id):
-        output = "%s/%s/%s.%s" % (self.location, feed_id, video_id, self.extension)
+
+        # Real output
+        filename = "%s.%s" % (video_id, self.extension)
+        output_dir = "%s/%s" % (self.location, feed_id)
+        output = "%s/%s" % (output_dir, filename)
+
+        # Tmp output
+        tmp_filename = "%s.webm" % (video_id)
+        tmp_output = "%s/%s" % (self.tmp_dir, tmp_filename)
+
         options = {"format": "bestaudio/best",
-                   "outtmpl": output,
+                   "outtmpl": tmp_output,
                    "postprocessors": [{
                        "key": "FFmpegExtractAudio",
                        "preferredcodec": self.file_format
-                   }],
-                   "nooverwrites": True}
-
+                   }]}
 
         video_url = "https://www.youtube.com/watch?v=%s" % (video["snippet"]["resourceId"]["videoId"])
         youtube_dl.YoutubeDL(options).download([video_url])
 
+        tmp_output = "%s/%s" % (self.tmp_dir, filename)
+
         url = "%s/%s/%s.%s" % (self.base_url, feed_id, video_id, self.extension)
-        size = str(os.path.getsize(output))
-        mime = mimetypes.guess_type(output)[0]
+        size = str(os.path.getsize(tmp_output))
+        mime = mimetypes.guess_type(tmp_output)[0]
+
+        os.makedirs(output_dir, 0o755, True)
+        os.rename(tmp_output, output)
+
+        self.downloaded.append(output)
 
         return (url, size, mime)
 

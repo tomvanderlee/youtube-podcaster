@@ -41,6 +41,7 @@ class Config:
             self.server = config["server"]
             self.youtube = config["youtube"]
             self.podcasts = config["podcasts"]
+            self.downloads = config["downloads"]
         except KeyError as e:
             raise ConfigException("Missing %s-section in %s" % (
                                   str(e), config))

@@ -10,11 +10,14 @@ from . import (
     youtube,
 )
 
+from threading import Thread
+
 
 class PodcastUpdater:
     def __init__(self, config):
         self.podcasts = config.podcasts
         self.youtube = youtube.Youtube(config.youtube["api-key"])
+        self.downloads = config.downloads
 
         if sys.platform == "linux" and not hasattr(sys, "real_prefix"):
             self.data_dir = "/var/lib/youtube-podcaster"
@@ -95,7 +98,14 @@ class PodcastUpdater:
 
     def populate_feed(self, feed, feed_id, yt_playlist, max_results=5):
         videos = self.youtube.get_playlist_items(yt_playlist, max_results)
-        downloader = youtube.Downloader.get_instance("vorbis", "downloads", "192.168.178.100")
+
+        file_format = self.downloads["format"]
+        download_path = self.downloads["path"]
+        download_url = self.downloads["url"]
+
+        downloader = youtube.Downloader.get_instance(file_format, download_path, download_url)
+
+        threads = []
 
         entries = feed.entry()
         for video in videos:
@@ -104,17 +114,27 @@ class PodcastUpdater:
                 if entry.id() == video_id:
                     break
             else:
-                url, size, mime = downloader.download(video, video_id, feed_id)
+                t = Thread(target=self.process_video, args=(downloader, video, video_id, feed_id))
+                threads.append(t)
+                t.start()
 
-                feed_entry = feed.add_entry()
-
-                feed_entry.id(video_id)
-                feed_entry.guid(video_id)
-                feed_entry.title(video["snippet"]["title"])
-                feed_entry.description(video["snippet"]["description"])
-                feed_entry.published(video["snippet"]["publishedAt"])
-                feed_entry.enclosure(url, size, mime)
+        for t in threads:
+            t.join()
 
         feed.last_updated = time.time()
+
+    def process_video(self, downloader, video, video_id, feed_id):
+            url, size, mime = downloader.download(video, video_id, feed_id)
+
+            feed = self.feeds[feed_id]
+            feed_entry = feed.add_entry()
+
+            feed_entry.id(video_id)
+            feed_entry.guid(video_id)
+            feed_entry.title(video["snippet"]["title"])
+            feed_entry.description(video["snippet"]["description"])
+            feed_entry.published(video["snippet"]["publishedAt"])
+            feed_entry.enclosure(url, size, mime)
+
 
 #  vim: set ts=8 sw=4 tw=0 et :
