@@ -1,0 +1,28 @@
+{
+  "name": "youtube-podcaster",
+  "version": "1.0.0",
+  "description": "Converts youtube playlists to RSS-feeds",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/tomvanderlee/youtube-podcaster"
+  },
+  "keywords": [
+    "youtube",
+    "podcast",
+    "rss"
+  ],
+  "author": "Tom van der Lee",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^1.5.2",
+    "express": "^4.13.4",
+    "googleapis": "^2.1.7",
+    "mkdirp": "^0.5.1",
+    "npmlog": "^2.0.2",
+    "podcast": "^0.2.2",
+    "ytdl-core": "^0.7.9"
+  }
+}

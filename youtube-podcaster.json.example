@@ -1,21 +1,25 @@
 {
     "server" : {
         "interface": "0.0.0.0",
-	"port": 8888
+        "port": 3000
     },
 
     "youtube": {
-        "api-key": ""
+        "api_key": "MY_YOUTUBE_API_V3_KEY"
     },
 
-    "podcasts": [{
-        "username": "",
-        "playlists": [""]
-    }],
+    "playlists": [
+        "PLAYLIST_ID",
+        "ANOTHER_ONE",
+    ],
 
     "downloads": {
-        "format": "vorbis",
-        "path": "/tmp/downloads/",
-        "url": "localhost"
+        "max_items_in_feed": 5, // Delete this line for infinite feed items
+        "path": "/path/to/folder",
+        "url": {
+            "host": "http://localhost:3000",
+            "subdir": "/item"
+        }
     }
 }
+
