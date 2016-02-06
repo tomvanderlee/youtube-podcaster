@@ -297,7 +297,7 @@ function compareFeedItems(item1, item2) {
 function removeOldItemsInFeed(feed) {
     while (options.max_items_in_feed != undefined
         && feed.items.length > options.max_items_in_feed) {
-        var old_item = items.pop();
+        var old_item = feed.items.pop();
         var file = old_item.enclosure.file;
         fs.unlinkSync(file);
         log.verbose("Removed item from feed: " + file);
